@@ -185,8 +185,8 @@ class PyInterp(QTextEdit):
                     print ' '
                     print '\n'.join(self.completer.rl_matches)
                     # print self.completer.rl_matches
-                    self.marker()
-                    self.insertPlainText(line)
+                self.marker()
+                self.insertPlainText(line)
 
             return
 
