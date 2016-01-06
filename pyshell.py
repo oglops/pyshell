@@ -73,7 +73,7 @@ class PyInterp(QTextEdit):
         # palette.setColor(QPalette.Base, QColor(0, 0, 0))
         # palette.setColor(QPalette.Text, QColor(0, 255, 0))
         # self.setPalette(palette)
-        # self.setFont(QFont('Courier', 12))
+        self.setFont(QFont('Courier', 10))
 
         # initilize interpreter with self locals
         self.initInterpreter(locals())
@@ -174,11 +174,12 @@ class PyInterp(QTextEdit):
                 self.clearCurrentBlock()
                 self.insertPlainText(self.completer.rl_matches[0])
             else:
-                print 'repeat:',self.completer.repeated
+                print 'repeat:', self.completer.repeated
 
                 mod = self.completer.repeated % len(self.completer.completions)
-                if mod==0:
-                    print self.completer.rl_matches
+                if mod == 0:
+                    # print self.completer.rl_matches
+                    col_print(self.completer.rl_matches)
                 else:
 
                     print ' '
@@ -287,6 +288,31 @@ class PyInterp(QTextEdit):
 
         # allow all other key events
         super(PyInterp, self).keyPressEvent(event)
+# http://stackoverflow.com/a/30861871/2052889
+
+
+def col_print(lines, term_width=90, indent=0, pad=2):
+    n_lines = len(lines)
+    if n_lines == 0:
+        return
+
+    col_width = max(len(line) for line in lines)
+    n_cols = int((term_width + pad - indent)/(col_width + pad))
+    n_cols = min(n_lines, max(1, n_cols))
+
+    col_len = int(n_lines/n_cols) + (0 if n_lines % n_cols == 0 else 1)
+    if (n_cols - 1) * col_len >= n_lines:
+        n_cols -= 1
+
+    cols = [lines[i*col_len: i*col_len + col_len] for i in range(n_cols)]
+
+    rows = list(zip(*cols))
+    rows_missed = zip(*[col[len(rows):] for col in cols[:-1]])
+    rows.extend(rows_missed)
+
+    for row in rows:
+        print(" "*indent + (" "*pad).join(line.ljust(col_width)
+                                          for line in row))
 
 
 def getMayaWindow():
