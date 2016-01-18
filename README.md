@@ -3,6 +3,10 @@ python command shell for maya
 
 This is a python command shell for maya with auto complete
 
+Usage
+------------------
+    import pyshell
+    pyshell.main(locals())
 
 Current Status
 ------------------
