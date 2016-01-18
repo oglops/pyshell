@@ -90,6 +90,8 @@ class PyInterp(QtGui.QTextEdit):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
 
+        self.textChanged.connect(self.check_multiline)
+
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
         menu.addSeparator()
@@ -102,6 +104,12 @@ class PyInterp(QtGui.QTextEdit):
 
             print self.interpreter.locals
 
+    def check_multiline(self):
+        self.blockSignals(True)
+        # print 'check'
+        with open('/tmp/test','a') as f:
+            f.write('changed')
+        self.blockSignals(False)
 
     def printBanner(self):
         self.write(sys.version)
@@ -192,6 +200,17 @@ class PyInterp(QtGui.QTextEdit):
 
         return False
 
+    def is_bracket_matching(self,line):
+        multiline=False
+
+        c = self.command or line
+        # print 'command:',c
+        if c.count('(')!=c.count(')') or c.count('[')!=c.count(']') or c.count('{')!=c.count('}'):
+            multiline=True
+
+        # print 'multiline:',multiline
+        return multiline
+
     def keyPressEvent(self, event):
 
         if event.key() == Qt.Key_Tab:
@@ -202,7 +221,7 @@ class PyInterp(QtGui.QTextEdit):
                 self.clearCurrentBlock()
                 self.insertPlainText(self.completer.rl_matches[0])
             else:
-                print 'repeat:', self.completer.repeated
+                # print 'repeat:', self.completer.repeated
 
                 mod = self.completer.repeated % len(self.completer.completions)
                 if mod == 0:
@@ -280,7 +299,7 @@ class PyInterp(QtGui.QTextEdit):
                 try:
                     line[-1]
                     self.haveLine = True
-                    if line[-1] == ':':
+                    if line.strip()[-1] == ':' or self.is_bracket_matching(line):
                         self.multiLine = True
                     self.history.insert(0, line)
                 except:
