@@ -2,9 +2,10 @@ import os
 import re
 import sys
 import code
+import pickle
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import Qt
 
 # this is for maya
 try:
@@ -15,20 +16,21 @@ try:
 except:
     pass
 
-
 # http://stackoverflow.com/questions/12431555/enabling-code-completion-in-an-embedded-python-interpreter
-class MyInterpreter(QWidget):
 
-    def __init__(self, parent):
+
+class MyInterpreter(QtGui.QWidget):
+
+    def __init__(self, parent, local_vars):
 
         super(MyInterpreter, self).__init__(parent)
-        hBox = QHBoxLayout()
+        hBox = QtGui.QHBoxLayout()
 
         self.setLayout(hBox)
-        self.textEdit = PyInterp(self)
+        self.textEdit = PyInterp(self, local_vars)
 
         # this is how you pass in locals to the interpreter
-        self.textEdit.initInterpreter(locals())
+        # self.textEdit.initInterpreter(locals())
 
         self.resize(850, 400)
         # self.centerOnScreen()
@@ -37,14 +39,16 @@ class MyInterpreter(QWidget):
         hBox.setMargin(0)
         hBox.setSpacing(0)
 
+        self.setWindowTitle('python shell v0.1 by oglop')
+
     def centerOnScreen(self):
         # center the widget on the screen
-        resolution = QDesktopWidget().screenGeometry()
+        resolution = QtGui.QDesktopWidget().screenGeometry()
         self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
 
 
-class PyInterp(QTextEdit):
+class PyInterp(QtGui.QTextEdit):
 
     class InteractiveInterpreter(code.InteractiveInterpreter):
 
@@ -54,7 +58,7 @@ class PyInterp(QTextEdit):
         def runIt(self, command):
             code.InteractiveInterpreter.runsource(self, command)
 
-    def __init__(self,  parent):
+    def __init__(self,  parent, local_vars):
         super(PyInterp,  self).__init__(parent)
 
         sys.stdout = self
@@ -69,22 +73,40 @@ class PyInterp(QTextEdit):
         self.interpreterLocals = {}
 
         # setting the color for bg and text
-        # palette = QPalette()
-        # palette.setColor(QPalette.Base, QColor(0, 0, 0))
-        # palette.setColor(QPalette.Text, QColor(0, 255, 0))
-        # self.setPalette(palette)
-        self.setFont(QFont('Courier', 10))
+        palette = QtGui.QPalette()
+        palette.setColor(QtGui.QPalette.Base, QtGui.QColor(46, 46, 46))
+        palette.setColor(QtGui.QPalette.Text, QtGui.QColor(179, 179, 179))
+        self.setPalette(palette)
+        self.setFont(QtGui.QFont('DejaVu Sans Mono', 10))
 
         # initilize interpreter with self locals
-        self.initInterpreter(locals())
+        self.initInterpreter(local_vars)
 
         from rlcompleter2 import Completer
+
         self.completer = Completer()
+
+        # extend default menu
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
+
+    def showContextMenu(self,pos):
+        menu=self.createStandardContextMenu()
+        menu.addSeparator()
+        testAction=menu.addAction('test')
+        action=menu.exec_(self.mapToGlobal(pos))
+        # delete menu
+        if action== testAction:
+            # print len(locals()),len(globals()),len(vars(self.interpreter)),len(self.interpreter.locals)
+            print len(self.interpreter.locals)
+
+            print self.interpreter.locals
+
 
     def printBanner(self):
         self.write(sys.version)
         self.write(' on ' + sys.platform + '\n')
-        self.write('PyQt4 ' + PYQT_VERSION_STR + '\n')
+        self.write('PyQt4 ' + QtCore.PYQT_VERSION_STR + '\n')
         # msg = 'Type !hist for a history view and !hist(n) history index recall'
         # self.write(msg + '\n')
 
@@ -99,9 +121,15 @@ class PyInterp(QTextEdit):
             # when we pass in locals, we don't want it to be named "self"
             # so we rename it with the name of the class that did the passing
             # and reinsert the locals back into the interpreter dictionary
-            selfName = interpreterLocals['self'].__class__.__name__
-            interpreterLocalVars = interpreterLocals.pop('self')
-            self.interpreterLocals[selfName] = interpreterLocalVars
+
+            # maybe this still works when run outside maya
+            try:
+                selfName = interpreterLocals['self'].__class__.__name__
+                interpreterLocalVars = interpreterLocals.pop('self')
+                self.interpreterLocals[selfName] = interpreterLocalVars
+            except:
+                pass
+                self.interpreterLocals = interpreterLocals
         else:
             self.interpreterLocals = interpreterLocals
         self.interpreter = self.InteractiveInterpreter(self.interpreterLocals)
@@ -318,23 +346,24 @@ def col_print(lines, term_width=90, indent=0, pad=2):
 def getMayaWindow():
     'Get the maya main window as a QMainWindow instance'
     ptr = mui.MQtUtil.mainWindow()
-    return sip.wrapinstance(long(ptr), QObject)
+    return sip.wrapinstance(long(ptr), QtCore.QObject)
 
 
-def main():
+def main(local_vars=locals()):
 
-    if str(qApp.applicationName()).lower().startswith('maya'):
+    if str(QtGui.qApp.applicationName()).lower().startswith('maya'):
         global win
         try:
             win.close()
         except:
             pass
-        win = MyInterpreter(None)
+        win = MyInterpreter(None, local_vars)
         win.show()
 
     else:
-        app = QApplication(sys.argv)
-        win = MyInterpreter(None)
+        # print 'in else'
+        app = QtGui.QApplication(sys.argv)
+        win = MyInterpreter(None, local_vars)
         win.show()
         sys.exit(app.exec_())
 
@@ -343,4 +372,4 @@ if __name__ == "__main__":
     main()
 
 
-print 'xxx'
+# print 'xxx'
