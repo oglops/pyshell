@@ -76,17 +76,18 @@ class PyInterp(QtGui.QTextEdit):
         self.historyIndex = -1
         self.interpreterLocals = {}
 
-        self.last_cursor=None
+        # self.last_cursor=None
 
         # setting the color for bg and text
         palette = QtGui.QPalette()
-        highlight_color =QtGui.QColor(179, 179, 179)
+        text_color = QtGui.QColor(179, 179, 179)
+        # highlight_color=self.palette().highlight().color()
         bg_color=QtGui.QColor(46, 46, 46)
         palette.setColor(QtGui.QPalette.Base, bg_color)
-        palette.setColor(QtGui.QPalette.Text,highlight_color )
+        palette.setColor(QtGui.QPalette.Text,text_color )
 
-        palette.setColor(QtGui.QPalette.Highlight, highlight_color)
-        palette.setColor(QtGui.QPalette.HighlightedText, bg_color)
+        # palette.setColor(QtGui.QPalette.Highlight, highlight_color)
+        # palette.setColor(QtGui.QPalette.HighlightedText, bg_color)
         # set highlight color
 
         self.setPalette(palette)
@@ -97,6 +98,9 @@ class PyInterp(QtGui.QTextEdit):
 
         # save selected \
         self.selected_range=None
+
+        # last cursor position
+        self.last_cursor_pos=self.textCursor().position()
 
         # initilize interpreter with self locals
         self.initInterpreter(local_vars)
@@ -114,7 +118,7 @@ class PyInterp(QtGui.QTextEdit):
         # set cursor shape
         # self.viewport().setCursor(Qt.PointingHandCursor)
         # self.setCursorWidth(10)
-        self.cursorPositionChanged.connect(self.save_cursor_pos)
+        self.cursorPositionChanged.connect(self.update_readonly)
 
         
 
@@ -126,9 +130,10 @@ class PyInterp(QtGui.QTextEdit):
         # delete menu
         if action== testAction:
             # print len(locals()),len(globals()),len(vars(self.interpreter)),len(self.interpreter.locals)
-            print len(self.interpreter.locals)
+            # print len(self.interpreter.locals)
 
-            print self.interpreter.locals
+            # print self.interpreter.locals
+            self.textCursor().setPosition(self.last_cursor_pos)
 
     def check_multiline(self):
         self.blockSignals(True)
@@ -148,13 +153,18 @@ class PyInterp(QtGui.QTextEdit):
     #         if str(self.document().findBlockByNumber(l).text()).startswith('>>>'):
     #             return l
 
-    def save_cursor_pos(self):
+    def update_readonly(self):
         # print 'save cursor\n'
-        self.last_cursor = self.textCursor()
+        # self.last_cursor = self.textCursor()
+        cursor = self.textCursor()
 
-        if self.textCursor().block().blockNumber()<self.get_last_block_num():
+        if cursor.block().blockNumber()<self.get_last_block_num():
             pass
             self.setReadOnly(True)
+            # self.blockSignals(True)
+            # cursor.setPosition(22)
+            # self.blockSignals(False)
+
         else:
             self.setReadOnly(False)
 
@@ -172,11 +182,13 @@ class PyInterp(QtGui.QTextEdit):
         return block_count
 
 
-    def is_editing_allowed(self):
+    def is_editing_allowed(self,cursor=None):
         allowed= False
-        cursor = self.textCursor()
+        if cursor is None:
+            cursor = self.textCursor()
         cur_blk_num = cursor.block().blockNumber()
         last_blk_num = self.get_last_block_num()
+        _logger.info('is_editing_allowed %s %s' %(cur_blk_num,last_blk_num))
         return cur_blk_num >=last_blk_num
 
 
@@ -213,6 +225,7 @@ class PyInterp(QtGui.QTextEdit):
     def mouseReleaseEvent(self,event):
         # _logger.info('event: %s' %event.__class__)
         # _logger.info('release mouse button %s' %event.buttons())
+        cursor = self.textCursor()
         if event.button()== Qt.LeftButton:
             # check if editing is allowed
             # if not self.is_editing_allowed():
@@ -221,22 +234,35 @@ class PyInterp(QtGui.QTextEdit):
             # self.setTextCursor(self.last_cursorself.last_cursor)
 
             # store selected range if highlight selection
-            cursor = self.textCursor()
+            
             # _logger.info('release mouse')
             if cursor.hasSelection():
                 start = cursor.selectionStart()
                 end = cursor.selectionEnd()
                 self.selected_range=(start,end)
                 _logger.info('save last selection: %s %s' %(start,end))
+
+
+
             else:
                 self.selected_range=None
 
-
+        elif event.button()== Qt.MiddleButton:
+            cursor = self.cursorForPosition(event.pos())
+            if self.is_editing_allowed(cursor):
+                self.setReadOnly(False)
+            else:
+                # self.setReadOnly(True)
+                return
         else:
             # print 'other'
             pass
 
-        super(PyInterp,self).mouseReleaseEvent(event)    
+        super(PyInterp,self).mouseReleaseEvent(event) 
+        _logger.info('restore last pos: %s' %self.last_cursor_pos)
+        cursor.setPosition(self.last_cursor_pos) 
+        # if event.button()== Qt.MiddleButton:
+        #     self.setReadOnly(True)  
 
     def mousePressEvent(self,event):
         if event.buttons()== Qt.LeftButton:
@@ -262,13 +288,27 @@ class PyInterp(QtGui.QTextEdit):
 
             pass
             # self.last_cursor = self.textCursor()
-
+        elif event.buttons()== Qt.MiddleButton:
+            _logger.info('press mouse button %s' %event.buttons())
+            # if middle click location is allowed to edit
+            cursor = self.cursorForPosition(event.pos())
+            if self.is_editing_allowed(cursor):
+                _logger.info('editing_allowed' )
+                self.setReadOnly(False)   
+            else:
+            #     _logger.info('not allowed' )
+            #     event.ignore()
+                return 
 
         else:
             # print 'other'
             pass
 
         super(PyInterp,self).mousePressEvent(event)
+        self.textCursor().setCharFormat(self.default_char_format)
+        # if event.buttons()== Qt.MiddleButton:
+        #     self.setReadOnly(True)
+        #     pass
 
 
     def marker(self):
