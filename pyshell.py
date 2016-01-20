@@ -188,8 +188,15 @@ class PyInterp(QtGui.QTextEdit):
             cursor = self.textCursor()
         cur_blk_num = cursor.block().blockNumber()
         last_blk_num = self.get_last_block_num()
-        _logger.info('is_editing_allowed %s %s' %(cur_blk_num,last_blk_num))
-        return cur_blk_num >=last_blk_num
+        _logger.info('is_editing_allowed %s %s %s %s' %(cur_blk_num,last_blk_num,self.textCursor().position(),self.textCursor().block().position()))
+        if cur_blk_num >=last_blk_num:
+            allowed=True
+            # consider >>>
+            if cur_blk_num == last_blk_num:
+                if cursor.position() - cursor.block().position() <= 3:
+                    allowed=False
+                pass
+        return allowed
 
 
     def mouseMoveEvent(self,event):
@@ -240,7 +247,7 @@ class PyInterp(QtGui.QTextEdit):
                 start = cursor.selectionStart()
                 end = cursor.selectionEnd()
                 self.selected_range=(start,end)
-                _logger.info('save last selection: %s %s' %(start,end))
+                # _logger.info('save last selection: %s %s' %(start,end))
 
 
 
@@ -259,7 +266,7 @@ class PyInterp(QtGui.QTextEdit):
             pass
 
         super(PyInterp,self).mouseReleaseEvent(event) 
-        _logger.info('restore last pos: %s' %self.last_cursor_pos)
+        # _logger.info('restore last pos: %s' %self.last_cursor_pos)
         cursor.setPosition(self.last_cursor_pos) 
         # if event.button()== Qt.MiddleButton:
         #     self.setReadOnly(True)  
@@ -289,14 +296,14 @@ class PyInterp(QtGui.QTextEdit):
             pass
             # self.last_cursor = self.textCursor()
         elif event.buttons()== Qt.MiddleButton:
-            _logger.info('press mouse button %s' %event.buttons())
+            # _logger.info('press mouse button %s' %event.buttons())
             # if middle click location is allowed to edit
             cursor = self.cursorForPosition(event.pos())
             if self.is_editing_allowed(cursor):
                 _logger.info('editing_allowed' )
                 self.setReadOnly(False)   
             else:
-            #     _logger.info('not allowed' )
+                _logger.info('not allowed' )
             #     event.ignore()
                 return 
 
@@ -476,7 +483,8 @@ class PyInterp(QtGui.QTextEdit):
         if event.key() in [Qt.Key_Left, Qt.Key_Backspace]:
             # don't allow deletion of marker
             # if qt version < 4.7, have to use position() - block().position()
-            if self.textCursor().positionInBlock() == 4:
+            # if self.textCursor().positionInBlock() == 4:
+            if self.textCursor().position() - self.textCursor().block().position() == 4:
                 return None
 
             if not self.is_editing_allowed():
