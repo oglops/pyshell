@@ -43,7 +43,7 @@ class MyInterpreter(QtGui.QWidget):
         hBox.setMargin(0)
         hBox.setSpacing(0)
 
-        self.setWindowTitle('python shell v0.1 by oglop')
+        self.setWindowTitle('python shell v0.1 by Uncle Han')
 
     def centerOnScreen(self):
         # center the widget on the screen
@@ -331,6 +331,9 @@ class PyInterp(QtGui.QTextEdit):
                 self.insertPlainText(line)
                 self.insertPlainText('\n')
                 i+=1
+
+                self.command += str(line) + '\n' 
+                
 
         else:
             self.insertPlainText(source.text())
