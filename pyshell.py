@@ -317,6 +317,23 @@ class PyInterp(QtGui.QTextEdit):
         #     self.setReadOnly(True)
         #     pass
 
+    def insertFromMimeData(self,source):
+        # super(PyInterp,self).insertPlainText(source.text())
+        # self.insertPlainText(source.text())
+        lines = source.text().split('\n')
+        if lines:
+            self.multiLine=True
+            i=1
+            for line in lines:
+
+                if i>1:
+                    self.marker()
+                self.insertPlainText(line)
+                self.insertPlainText('\n')
+                i+=1
+
+        else:
+            self.insertPlainText(source.text())
 
     def marker(self):
         if self.multiLine:
@@ -588,7 +605,7 @@ def main(local_vars=locals()):
         win.show()
 
     else:
-        _logger.info('start ...')
+        # _logger.info('start ...')
         app = QtGui.QApplication(sys.argv)
         win = MyInterpreter(None, local_vars)
         win.show()
