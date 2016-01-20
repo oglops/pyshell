@@ -120,7 +120,7 @@ class PyInterp(QtGui.QTextEdit):
         # self.setCursorWidth(10)
         self.cursorPositionChanged.connect(self.update_readonly)
 
-        
+        self.setAcceptRichText(False)
 
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
