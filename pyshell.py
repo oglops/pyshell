@@ -8,7 +8,8 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 import logging
 
-logging.basicConfig(filename='/tmp/myapp.log', level=logging.INFO)
+logging.basicConfig(filename='/tmp/pyshell.log', level=logging.INFO)
+logging.disable(logging.INFO)
 _logger = logging.getLogger(__name__)
 
 # this is for maya
