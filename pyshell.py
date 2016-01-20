@@ -6,6 +6,10 @@ import pickle
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
+import logging
+
+logging.basicConfig(filename='/tmp/myapp.log', level=logging.INFO)
+_logger = logging.getLogger(__name__)
 
 # this is for maya
 try:
@@ -72,12 +76,27 @@ class PyInterp(QtGui.QTextEdit):
         self.historyIndex = -1
         self.interpreterLocals = {}
 
+        self.last_cursor=None
+
         # setting the color for bg and text
         palette = QtGui.QPalette()
-        palette.setColor(QtGui.QPalette.Base, QtGui.QColor(46, 46, 46))
-        palette.setColor(QtGui.QPalette.Text, QtGui.QColor(179, 179, 179))
+        highlight_color =QtGui.QColor(179, 179, 179)
+        bg_color=QtGui.QColor(46, 46, 46)
+        palette.setColor(QtGui.QPalette.Base, bg_color)
+        palette.setColor(QtGui.QPalette.Text,highlight_color )
+
+        palette.setColor(QtGui.QPalette.Highlight, highlight_color)
+        palette.setColor(QtGui.QPalette.HighlightedText, bg_color)
+        # set highlight color
+
         self.setPalette(palette)
         self.setFont(QtGui.QFont('DejaVu Sans Mono', 10))
+
+        # save default format
+        self.default_char_format = self.textCursor().charFormat()
+
+        # save selected \
+        self.selected_range=None
 
         # initilize interpreter with self locals
         self.initInterpreter(local_vars)
@@ -91,6 +110,13 @@ class PyInterp(QtGui.QTextEdit):
         self.customContextMenuRequested.connect(self.showContextMenu)
 
         self.textChanged.connect(self.check_multiline)
+
+        # set cursor shape
+        # self.viewport().setCursor(Qt.PointingHandCursor)
+        # self.setCursorWidth(10)
+        self.cursorPositionChanged.connect(self.save_cursor_pos)
+
+        
 
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
@@ -117,6 +143,133 @@ class PyInterp(QtGui.QTextEdit):
         self.write('PyQt4 ' + QtCore.PYQT_VERSION_STR + '\n')
         # msg = 'Type !hist for a history view and !hist(n) history index recall'
         # self.write(msg + '\n')
+    # def get_last_line(self):
+    #     for l in reversed(range(self.document().blockCount())):
+    #         if str(self.document().findBlockByNumber(l).text()).startswith('>>>'):
+    #             return l
+
+    def save_cursor_pos(self):
+        # print 'save cursor\n'
+        self.last_cursor = self.textCursor()
+
+        if self.textCursor().block().blockNumber()<self.get_last_block_num():
+            pass
+            self.setReadOnly(True)
+        else:
+            self.setReadOnly(False)
+
+        
+
+
+
+    def get_last_block_num(self):
+        block_count = self.document().blockCount()
+        for i in xrange(block_count,-1,-1):
+            if str(self.document().findBlockByNumber(i).text()).startswith('>>>'):
+                return i
+
+        # if nothing found, return last line, but this is not possible
+        return block_count
+
+
+    def is_editing_allowed(self):
+        allowed= False
+        cursor = self.textCursor()
+        cur_blk_num = cursor.block().blockNumber()
+        last_blk_num = self.get_last_block_num()
+        return cur_blk_num >=last_blk_num
+
+
+    def mouseMoveEvent(self,event):
+        # _logger.info('event: %s' %event.__class__)
+        # _logger.info('release mouse button %s' %event.buttons())
+
+
+
+
+        if event.button()== Qt.LeftButton:
+
+            # cursor = self.textCursor()
+            # # _logger.info('release mouse')
+            # if cursor.hasSelection():
+            #     start = cursor.selectionStart()
+            #     end = cursor.selectionEnd()
+
+
+
+            # set selected text color before releasing mouse button
+            tmp = self.textCursor().charFormat()
+            # tmp.setBackground(QtGui.QBrush(self.palette().highlight().color()))
+            # tmp.setForeground(QtGui.QBrush(self.palette().background().color()))
+            tmp.setBackground(QtGui.QBrush(self.palette().text().color()))
+            tmp.setForeground(QtGui.QBrush(self.palette().base().color()))
+
+            self.textCursor().setCharFormat(tmp)
+            # print 'cursor changed'
+            # self.textCursor().setPosition(3)
+
+        super(PyInterp,self).mouseMoveEvent(event)    
+
+    def mouseReleaseEvent(self,event):
+        # _logger.info('event: %s' %event.__class__)
+        # _logger.info('release mouse button %s' %event.buttons())
+        if event.button()== Qt.LeftButton:
+            # check if editing is allowed
+            # if not self.is_editing_allowed():
+                # print 'left'
+                # return
+            # self.setTextCursor(self.last_cursorself.last_cursor)
+
+            # store selected range if highlight selection
+            cursor = self.textCursor()
+            # _logger.info('release mouse')
+            if cursor.hasSelection():
+                start = cursor.selectionStart()
+                end = cursor.selectionEnd()
+                self.selected_range=(start,end)
+                _logger.info('save last selection: %s %s' %(start,end))
+            else:
+                self.selected_range=None
+
+
+        else:
+            # print 'other'
+            pass
+
+        super(PyInterp,self).mouseReleaseEvent(event)    
+
+    def mousePressEvent(self,event):
+        if event.buttons()== Qt.LeftButton:
+            # check if editing is allowed
+            # if not self.is_editing_allowed():
+                # print 'left'
+                # return
+            # self.textCursor().setCharFormat(self.default_char_format)
+            # block_count = self.document().blockCount()
+            # for i in xrange(block_count,-1,-1):
+            #     self.document().findBlockByNumber(i).textCursor().setCharFormat(self.default_char_format)
+
+            # select all
+            cursor=self.textCursor()
+            if self.selected_range:
+                start,end = self.selected_range
+                cursor.setPosition(start)
+                cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
+
+                self.textCursor().setCharFormat(self.default_char_format)
+                # cursor.setCharFormat(self.default_char_format)
+
+            pass
+            # self.last_cursor = self.textCursor()
+
+
+        else:
+            # print 'other'
+            pass
+
+        super(PyInterp,self).mousePressEvent(event)
+
 
     def marker(self):
         if self.multiLine:
@@ -149,6 +302,8 @@ class PyInterp(QtGui.QTextEdit):
     def write(self, line):
         self.insertPlainText(line)
         self.ensureCursorVisible()
+
+        self.document().lastBlock().setUserState(666)
 
     def clearCurrentBlock(self):
         # block being current row
@@ -210,6 +365,8 @@ class PyInterp(QtGui.QTextEdit):
 
         # print 'multiline:',multiline
         return multiline
+
+
 
     def keyPressEvent(self, event):
 
@@ -280,6 +437,9 @@ class PyInterp(QtGui.QTextEdit):
             # don't allow deletion of marker
             # if qt version < 4.7, have to use position() - block().position()
             if self.textCursor().positionInBlock() == 4:
+                return None
+
+            if not self.is_editing_allowed():
                 return None
 
         if event.key() in [Qt.Key_Return, Qt.Key_Enter]:
@@ -380,7 +540,7 @@ def main(local_vars=locals()):
         win.show()
 
     else:
-        # print 'in else'
+        _logger.info('start ...')
         app = QtGui.QApplication(sys.argv)
         win = MyInterpreter(None, local_vars)
         win.show()
