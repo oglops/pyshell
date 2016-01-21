@@ -134,7 +134,9 @@ class PyInterp(QtGui.QTextEdit):
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
         menu.addSeparator()
-        testAction=menu.addAction('test')
+        
+        resetAction=menu.addAction('Reset')
+        testAction=menu.addAction('Debug')
         action=menu.exec_(self.mapToGlobal(pos))
         # delete menu
         if action== testAction:
@@ -143,6 +145,12 @@ class PyInterp(QtGui.QTextEdit):
 
             # print self.interpreter.locals
             self.textCursor().setPosition(self.last_cursor_pos)
+        if action== resetAction:
+            self.clear()
+            self.marker()
+            # update last_cursor_pos
+            self.last_cursor_pos=self.textCursor().position()
+
 
     def check_multiline(self):
         self.blockSignals(True)
@@ -400,6 +408,9 @@ class PyInterp(QtGui.QTextEdit):
         else:
             self.insertPlainText('>>> ')
 
+        # update last_cursor_pos
+        self.last_cursor_pos=self.textCursor().position()
+
     def initInterpreter(self, interpreterLocals=None):
         if interpreterLocals:
             # when we pass in locals, we don't want it to be named "self"
@@ -517,9 +528,17 @@ class PyInterp(QtGui.QTextEdit):
 
             return
 
-        if event.key() == Qt.Key_Escape:
-            # proper exit
-            self.interpreter.runIt('exit()')
+        # if event.key() == Qt.Key_Escape:
+        #     # proper exit
+        #     self.interpreter.runIt('exit()')
+
+        # ctrl-c to reset current line 
+        if event.key()== Qt.Key_C and event.modifiers()==Qt.ControlModifier:
+            # self.interpreter.runIt('exit()')
+            self.append('')
+            self.command = ''
+            self.marker()
+            return
 
         if event.key() == Qt.Key_Down:
             if self.historyIndex == len(self.history):
