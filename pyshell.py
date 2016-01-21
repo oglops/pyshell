@@ -12,6 +12,8 @@ logging.basicConfig(filename='/tmp/pyshell.log', level=logging.INFO)
 logging.disable(logging.INFO)
 _logger = logging.getLogger(__name__)
 
+__VERSION__='0.12'
+
 # this is for maya
 try:
     import sip
@@ -44,7 +46,7 @@ class MyInterpreter(QtGui.QWidget):
         hBox.setMargin(0)
         hBox.setSpacing(0)
 
-        self.setWindowTitle('python shell v0.1 by Uncle Han')
+        self.setWindowTitle('python shell v%s by Uncle Han' % __VERSION__)
 
     def centerOnScreen(self):
         # center the widget on the screen
@@ -121,7 +123,13 @@ class PyInterp(QtGui.QTextEdit):
         # self.setCursorWidth(10)
         self.cursorPositionChanged.connect(self.update_readonly)
 
+        # disable rich text pasting
         self.setAcceptRichText(False)
+
+        # clear undo
+        self.document().clearUndoRedoStacks()
+
+        # self.setAcceptDrops(False)
 
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
@@ -318,6 +326,45 @@ class PyInterp(QtGui.QTextEdit):
         #     self.setReadOnly(True)
         #     pass
 
+    def dropEvent(self,event):
+        # if drop from self
+        if event.source():
+            # print 'self drag'
+            event.accept()
+            # self.viewport().update()
+            return
+
+        # insert file path instead uri when dragging files from system
+        cursor = self.cursorForPosition(event.pos())
+        if self.is_editing_allowed(cursor):
+            if event.mimeData().hasUrls:
+                for url in event.mimeData().urls():
+                    self.insertPlainText(str(url.toLocalFile()))
+                return
+        else:
+            return
+
+        super(PyInterp,self).dropEvent(event)
+
+    # def dragEvent(self,event):
+    #     # print event.source()
+    #     if event.source():
+    #         # print 'self drag'
+    #         event.accept()
+    #         # self.viewport().update()
+    #         return
+
+    #     super(PyInterp,self).dragEvent(event)
+
+    def dragMoveEvent(self,event):
+        # if drag from self
+        if event.source():
+            # print 'self drag'
+            event.accept()
+            self.viewport().update()
+            return
+        super(PyInterp,self).dragMoveEvent(event)
+
     def insertFromMimeData(self,source):
         # super(PyInterp,self).insertPlainText(source.text())
         # self.insertPlainText(source.text())
@@ -337,7 +384,15 @@ class PyInterp(QtGui.QTextEdit):
                 
 
         else:
+            # if source.hasUrls():
+            #     print 'has url'
+            #     # self.insertPlainText(source.urls()[0].path())
+            # else:
+                # text = source.text()
+                # if text.startswith('file://'):
+                #     text=text.lstrip('file://')
             self.insertPlainText(source.text())
+            # self.insertPlainText('xxx')
 
     def marker(self):
         if self.multiLine:
