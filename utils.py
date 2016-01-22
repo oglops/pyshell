@@ -60,3 +60,17 @@ def add_menu(location='Window->General Editors',label='xxx',command='print "xxx"
 def add_pyshell_menu():
 	global_vars = inspect.getouterframes(inspect.currentframe())[-1][0].f_globals
 	add_menu(label="Python Command Shell",command= lambda *x: __import__("pyshell").main(global_vars))
+
+
+def add_toolbox_menu():
+	gridLayout= 'hj_gridLayout'
+	if mc.gridLayout(gridLayout,q=1,ex=1):
+		mc.deleteUI(gridLayout)
+
+	mc.setParent('flowLayout2')
+	mc.gridLayout(gridLayout,nc=1,cwh=[32,32])
+	mc.setParent(gridLayout)
+
+	global_vars = inspect.getouterframes(inspect.currentframe())[-1][0].f_globals
+	# global_vars = globals()
+	mc.shelfButton(i='tools.png',c=lambda *x: __import__("pyshell").main(global_vars))
