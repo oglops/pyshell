@@ -3,6 +3,7 @@ import re
 import sys
 import code
 import pickle
+import inspect
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
@@ -12,7 +13,7 @@ logging.basicConfig(filename='/tmp/pyshell.log', level=logging.INFO)
 logging.disable(logging.INFO)
 _logger = logging.getLogger(__name__)
 
-__VERSION__='0.12'
+__VERSION__='0.13'
 
 # this is for maya
 try:
@@ -28,13 +29,13 @@ except:
 
 class MyInterpreter(QtGui.QWidget):
 
-    def __init__(self, parent, local_vars):
+    def __init__(self, parent, global_vars=None):
 
         super(MyInterpreter, self).__init__(parent)
         hBox = QtGui.QHBoxLayout()
 
         self.setLayout(hBox)
-        self.textEdit = PyInterp(self, local_vars)
+        self.textEdit = PyInterp(self, global_vars)
 
         # this is how you pass in locals to the interpreter
         # self.textEdit.initInterpreter(locals())
@@ -65,7 +66,7 @@ class PyInterp(QtGui.QTextEdit):
         def runIt(self, command):
             code.InteractiveInterpreter.runsource(self, command)
 
-    def __init__(self,  parent, local_vars):
+    def __init__(self,  parent, global_vars=None):
         super(PyInterp,  self).__init__(parent)
 
         sys.stdout = self
@@ -106,7 +107,10 @@ class PyInterp(QtGui.QTextEdit):
         self.last_cursor_pos=self.textCursor().position()
 
         # initilize interpreter with self locals
-        self.initInterpreter(local_vars)
+        
+        if global_vars is None:
+            global_vars = inspect.getouterframes(inspect.currentframe())[-1][0].f_globals
+        self.initInterpreter(global_vars)
 
         from rlcompleter2 import Completer
 
@@ -377,7 +381,7 @@ class PyInterp(QtGui.QTextEdit):
         # super(PyInterp,self).insertPlainText(source.text())
         # self.insertPlainText(source.text())
         lines = source.text().split('\n')
-        if lines:
+        if len(lines)>1:
             self.multiLine=True
             i=1
             for line in lines:
@@ -671,7 +675,7 @@ def getMayaWindow():
     return sip.wrapinstance(long(ptr), QtCore.QObject)
 
 
-def main(local_vars=locals()):
+def main(global_vars=None):
 
     if str(QtGui.qApp.applicationName()).lower().startswith('maya'):
         global win
@@ -679,13 +683,13 @@ def main(local_vars=locals()):
             win.close()
         except:
             pass
-        win = MyInterpreter(None, local_vars)
+        win = MyInterpreter(None, global_vars)
         win.show()
 
     else:
         # _logger.info('start ...')
         app = QtGui.QApplication(sys.argv)
-        win = MyInterpreter(None, local_vars)
+        win = MyInterpreter(None, global_vars)
         win.show()
         sys.exit(app.exec_())
 
