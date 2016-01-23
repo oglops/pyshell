@@ -26,6 +26,7 @@ Changelog
 ------------------
 01/22/2016
 * multiline pasting now working
+
 01/05/2016
 * auto complete not fully working yet
 
