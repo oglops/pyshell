@@ -510,6 +510,11 @@ class PyInterp(QtGui.QTextEdit):
 
         if event.key() == Qt.Key_Tab:
             line = str(self.document().lastBlock().text())[4:]
+            # set width based on window width
+            # window_width=self.frameGeometry().width()
+            # self.completer.config.terminalwidth=160
+
+
             self.completer.construct(line)
 
             if len(self.completer.rl_matches) == 1:
@@ -521,6 +526,7 @@ class PyInterp(QtGui.QTextEdit):
                 mod = self.completer.repeated % len(self.completer.completions)
                 if mod == 0:
                     # print self.completer.rl_matches
+                    print ' '
                     col_print(self.completer.rl_matches)
                 else:
 
@@ -530,6 +536,8 @@ class PyInterp(QtGui.QTextEdit):
                 self.marker()
                 self.insertPlainText(line)
 
+            # scroll to bottom
+            self.ensureCursorVisible()
             return
 
         # if event.key() == Qt.Key_Escape:
