@@ -1,3 +1,6 @@
+import maya.mel as mm
+import maya.cmds as mc
+
 import utils
 reload(utils)
 

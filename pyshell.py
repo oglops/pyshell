@@ -56,6 +56,17 @@ class MyInterpreter(QtGui.QWidget):
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
 
 
+
+    def closeEvent(self, event):
+
+        print 'ui closed'
+        # restore stdout
+        sys.stdout = sys.textEdit.__stdout__
+        sys.stderr = sys.textEdit.__stderr__
+
+        event.accept()
+        # event.ignore()
+
 class PyInterp(QtGui.QTextEdit):
 
     class InteractiveInterpreter(code.InteractiveInterpreter):
@@ -68,6 +79,9 @@ class PyInterp(QtGui.QTextEdit):
 
     def __init__(self,  parent, global_vars=None):
         super(PyInterp,  self).__init__(parent)
+
+        self.stdout_bak = sys.stdout
+        self.stderr_bak = sys.stderr
 
         sys.stdout = self
         sys.stderr = self
@@ -135,6 +149,7 @@ class PyInterp(QtGui.QTextEdit):
 
         # self.setAcceptDrops(False)
 
+        # event.ignore()
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
         menu.addSeparator()
@@ -275,7 +290,7 @@ class PyInterp(QtGui.QTextEdit):
             else:
                 self.selected_range=None
 
-        elif event.button()== Qt.MiddleButton:
+        elif event.button()== Qt.MidButton:
             cursor = self.cursorForPosition(event.pos())
             if self.is_editing_allowed(cursor):
                 self.setReadOnly(False)
@@ -316,7 +331,7 @@ class PyInterp(QtGui.QTextEdit):
 
             pass
             # self.last_cursor = self.textCursor()
-        elif event.buttons()== Qt.MiddleButton:
+        elif event.buttons()== Qt.MidButton:
             # _logger.info('press mouse button %s' %event.buttons())
             # if middle click location is allowed to edit
             cursor = self.cursorForPosition(event.pos())
@@ -503,7 +518,6 @@ class PyInterp(QtGui.QTextEdit):
 
         # print 'multiline:',multiline
         return multiline
-
 
 
     def keyPressEvent(self, event):
