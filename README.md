@@ -7,8 +7,10 @@ Usage
 ------------------
     import pyshell
     pyshell.main()
-    
-如果想加到maya菜单里，必须把globals()当参数传进去,utils.py 和 userSetup.py是如何加菜单的举例
+
+其实只需要pyshell.py这一个文件就行，rlcompleter2你可以从pip装，lz没有在windows下测试，windows下你可以参考[python tips : rlcompleter & rlcompleter2 tab自动完成](https://ilmvfx.wordpress.com/2014/04/08/python-tips-rlcompleter-rlcompleter2-tab-auto-complete/)
+
+另外,如果想加到maya菜单里，必须把globals()当参数传进去,utils.py 和 userSetup.py 里面有举例如何加
 
     global_vars = inspect.getouterframes(inspect.currentframe())[-1][0].f_globals
 	add_menu(label="Python Command Shell",command= lambda *x: __import__("pyshell").main(global_vars))
