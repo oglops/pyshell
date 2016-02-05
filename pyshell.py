@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os
 import re
 import sys
@@ -48,6 +50,7 @@ class MyInterpreter(QtGui.QWidget):
         hBox.setSpacing(0)
 
         self.setWindowTitle('python shell v%s by Uncle Han' % __VERSION__)
+        # self.show()
 
     def centerOnScreen(self):
         # center the widget on the screen
@@ -61,8 +64,16 @@ class MyInterpreter(QtGui.QWidget):
 
         print 'ui closed'
         # restore stdout
-        sys.stdout = sys.textEdit.__stdout__
-        sys.stderr = sys.textEdit.__stderr__
+        sys.stdout = self.textEdit.stdout_bak
+        sys.stderr = self.textEdit.stderr_bak
+
+        # ptr = apiUI.MQtUtil.mainWindow()
+        # mwin=sip.wrapinstance(long(ptr), QtGui.QObject)
+        # cmdReporters = cmds.lsUI(type='cmdScrollFieldReporter')
+        # cmdReporter = mwin.findChild(QtGui.QTextEdit, cmdReporters[0])
+
+        # sys.stdout=cmdReporter
+        # sys.stderr =cmdReporter
 
         event.accept()
         # event.ignore()
