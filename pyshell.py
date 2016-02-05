@@ -15,7 +15,7 @@ logging.basicConfig(filename='/tmp/pyshell.log', level=logging.INFO)
 logging.disable(logging.INFO)
 _logger = logging.getLogger(__name__)
 
-__VERSION__='0.131'
+__VERSION__='0.13.2'
 
 # this is for maya
 try:
