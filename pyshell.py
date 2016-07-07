@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import re
@@ -12,8 +12,9 @@ from PyQt4.QtCore import Qt
 import logging
 
 logging.basicConfig(filename='/tmp/pyshell.log', level=logging.INFO)
-logging.disable(logging.INFO)
+#logging.disable(logging.INFO)
 _logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
 
 __VERSION__='0.13.2'
 
@@ -86,7 +87,7 @@ class PyInterp(QtGui.QTextEdit):
             code.InteractiveInterpreter.__init__(self, locals)
 
         def runIt(self, command):
-            code.InteractiveInterpreter.runsource(self, command)
+            code.InteractiveInterpreter.runsource(self, command, symbol='exec')
 
     def __init__(self,  parent, global_vars=None):
         super(PyInterp,  self).__init__(parent)
@@ -235,7 +236,7 @@ class PyInterp(QtGui.QTextEdit):
             cursor = self.textCursor()
         cur_blk_num = cursor.block().blockNumber()
         last_blk_num = self.get_last_block_num()
-        _logger.info('is_editing_allowed %s %s %s %s' %(cur_blk_num,last_blk_num,self.textCursor().position(),self.textCursor().block().position()))
+        _logger.debug('is_editing_allowed %s %s %s %s' %(cur_blk_num,last_blk_num,self.textCursor().position(),self.textCursor().block().position()))
         if cur_blk_num >=last_blk_num:
             allowed=True
             # consider >>>
@@ -347,10 +348,10 @@ class PyInterp(QtGui.QTextEdit):
             # if middle click location is allowed to edit
             cursor = self.cursorForPosition(event.pos())
             if self.is_editing_allowed(cursor):
-                _logger.info('editing_allowed' )
+                _logger.debug('editing_allowed' )
                 self.setReadOnly(False)   
             else:
-                _logger.info('not allowed' )
+                _logger.debug('not allowed' )
             #     event.ignore()
                 return 
 
