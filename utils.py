@@ -78,3 +78,26 @@ def add_toolbox_menu():
     # global_vars = globals()
     mc.shelfButton(
         i='play.png', c=lambda *x: __import__("pyshell").main(global_vars),w=40)
+
+
+
+def fix_channelbox_font():
+    from PyQt4 import QtCore, QtGui
+ 
+    import maya.cmds as cmds
+    import maya.OpenMayaUI as mui
+     
+    import sip
+     
+    ptr = mui.MQtUtil.findControl('mainChannelBox')
+    channelBox = sip.wrapinstance(long(ptr), QtCore.QObject)
+     
+    # styleSheet = '''
+    #     QWidget {
+    #       /* font-family: "Courier New"; */
+    #       font: normal %spx;
+    #     }
+    #     ''' % '16'
+    # channelBox.setStyleSheet(styleSheet)
+
+    channelBox.verticalHeader().setDefaultSectionSize(18)
