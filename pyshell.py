@@ -87,7 +87,8 @@ class PyInterp(QtGui.QTextEdit):
             code.InteractiveInterpreter.__init__(self, locals)
 
         def runIt(self, command):
-            code.InteractiveInterpreter.runsource(self, command, symbol='exec')
+            symbol = "single" if '\n' not in command else "exec"
+            code.InteractiveInterpreter.runsource(self, command, symbol=symbol)
 
     def __init__(self,  parent, global_vars=None):
         super(PyInterp,  self).__init__(parent)
