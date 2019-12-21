@@ -20,7 +20,7 @@ Current Status
 ------------------
 
 desired effect:
-http://gfycat.com/WindyLeanDog
+http://gfycat.com/WindyLeanDog <br>
 ![gfycat](https://fat.gfycat.com/WindyLeanDog.gif)
 
 
